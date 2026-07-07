@@ -45,7 +45,7 @@ clients can surface the right confirmations.
 
 ## Requirements
 
-- PHP 8.3+
+- PHP 8.4+
 - Composer
 - Node.js 20+ (for building the landing page assets)
 
