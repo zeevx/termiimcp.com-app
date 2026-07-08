@@ -104,7 +104,7 @@
                 <h2 class="text-2xl font-bold text-white sm:text-3xl">Connect in two clicks</h2>
                 <p class="mx-auto mt-2 max-w-md text-slate-400">
                     Paste your
-                    <a href="https://accounts.termii.com" class="text-emerald-300 underline-offset-4 hover:underline">Termii API key</a>,
+                    <a href="https://app.termii.ai" class="text-emerald-300 underline-offset-4 hover:underline">Termii API key</a>,
                     choose your assistant, and connect.
                 </p>
 

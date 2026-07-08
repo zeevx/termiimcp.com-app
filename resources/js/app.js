@@ -95,6 +95,7 @@ function initConnect() {
             if (tab) {
                 tab.close();
             }
+            console.log(error);
             showToast('Could not generate the connector link. Try again.');
         } finally {
             connectBtn.disabled = false;
