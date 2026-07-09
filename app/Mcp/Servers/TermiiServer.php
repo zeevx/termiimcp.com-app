@@ -27,6 +27,7 @@ use App\Mcp\Tools\GetMessageHistoryTool;
 use App\Mcp\Tools\SearchPhoneNumberTool;
 use App\Mcp\Tools\GetCampaignHistoryTool;
 use Laravel\Mcp\Server\Attributes\Version;
+use App\Mcp\Tools\SendMessageWithNumberTool;
 use App\Mcp\Tools\SendTemplateWithMediaTool;
 use App\Mcp\Tools\AddContactsFromContentsTool;
 use Laravel\Mcp\Server\Attributes\Instructions;
@@ -43,7 +44,9 @@ use Laravel\Mcp\Server\Attributes\Instructions;
 
     Conventions:
     - Phone numbers must be in international format without a leading "+", e.g. 2348012345678.
-    - The "from" argument is your approved Termii Sender ID; pass it when sending messages.
+    - The "from" argument is your approved Termii Sender ID; pass it when sending messages. The
+      send-message-with-number tool is the exception: it sends from a Termii auto-generated number
+      and needs no Sender ID.
     - "channel" is the delivery route: generic, dnd (transactional / bypasses DND) or whatsapp.
     - Tool results are the raw JSON returned by the Termii API.
     INSTRUCTIONS)]
@@ -51,6 +54,7 @@ class TermiiServer extends Server
 {
     protected array $tools = [
         SendMessageTool::class,
+        SendMessageWithNumberTool::class,
         SendBulkMessageTool::class,
         SendTemplateTool::class,
         SendTemplateWithMediaTool::class,

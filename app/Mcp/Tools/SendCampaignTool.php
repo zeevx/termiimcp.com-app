@@ -26,8 +26,17 @@ class SendCampaignTool extends Tool
             'phonebook_id' => ['required', 'string'],
             'channel' => ['nullable', 'string', 'in:generic,dnd,whatsapp'],
             'message_type' => ['nullable', 'string', 'in:plain,flash'],
+            'campaign_type' => ['nullable', 'string', 'in:regular,personalized'],
+            'schedule_sms_status' => ['nullable', 'string', 'in:regular,scheduled'],
+            'schedule_time' => ['nullable', 'string', 'required_if:schedule_sms_status,scheduled'],
             'options' => ['nullable', 'array'],
         ]);
+
+        $options = $request->get('options') ?: [];
+
+        if ($scheduleTime = $request->get('schedule_time')) {
+            $options['schedule_time'] = $scheduleTime;
+        }
 
         return $this->run(fn (LaraTermii $termii) => $termii->sendCampaign(
             countryCode: $request->get('country_code'),
@@ -36,7 +45,9 @@ class SendCampaignTool extends Tool
             phonebookId: $request->get('phonebook_id'),
             channel: $request->get('channel') ?: 'generic',
             messageType: $request->get('message_type') ?: 'plain',
-            options: $request->get('options') ?: [],
+            campaignType: $request->get('campaign_type') ?: 'regular',
+            scheduleSmsStatus: $request->get('schedule_sms_status') ?: 'regular',
+            options: $options,
         ));
     }
 
@@ -63,8 +74,18 @@ class SendCampaignTool extends Tool
                 ->description('Message type.')
                 ->enum(['plain', 'flash'])
                 ->default('plain'),
+            'campaign_type' => $schema->string()
+                ->description('Campaign type.')
+                ->enum(['regular', 'personalized'])
+                ->default('regular'),
+            'schedule_sms_status' => $schema->string()
+                ->description('Send immediately ("regular") or at a later time ("scheduled", requires schedule_time).')
+                ->enum(['regular', 'scheduled'])
+                ->default('regular'),
+            'schedule_time' => $schema->string()
+                ->description('When to send a scheduled campaign, e.g. "2026-07-10 15:00". Required when schedule_sms_status is "scheduled".'),
             'options' => $schema->object()
-                ->description('Optional additional campaign parameters, e.g. scheduling options, as a key-value map.'),
+                ->description('Optional additional campaign parameters, e.g. delimiter, remove_duplicate or enable_link_tracking, as a key-value map.'),
         ];
     }
 }

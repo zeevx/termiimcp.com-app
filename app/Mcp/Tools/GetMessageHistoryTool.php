@@ -13,7 +13,7 @@ use App\Mcp\Tools\Concerns\InteractsWithTermii;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Mcp\Server\Tools\Annotations\IsReadOnly;
 
-#[Description('Retrieve delivery reports and message history (SMS, voice and WhatsApp) for the connected Termii account.')]
+#[Description('Retrieve delivery reports and message history (SMS, voice and WhatsApp) for the connected Termii account. Pass a message ID to fetch the report for a single message.')]
 #[IsReadOnly]
 class GetMessageHistoryTool extends Tool
 {
@@ -21,11 +21,20 @@ class GetMessageHistoryTool extends Tool
 
     public function handle(Request $request): Response
     {
-        return $this->run(fn (LaraTermii $termii) => $termii->history());
+        $request->validate([
+            'message_id' => ['nullable', 'string'],
+        ]);
+
+        return $this->run(fn (LaraTermii $termii) => $termii->history(
+            messageId: $request->get('message_id'),
+        ));
     }
 
     public function schema(JsonSchema $schema): array
     {
-        return [];
+        return [
+            'message_id' => $schema->string()
+                ->description('Retrieve the delivery report for this single message ID only. Omit to list all messages.'),
+        ];
     }
 }

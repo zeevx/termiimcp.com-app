@@ -13,7 +13,7 @@ use App\Mcp\Tools\Concerns\InteractsWithTermii;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Mcp\Server\Tools\Annotations\IsReadOnly;
 
-#[Description('List all Sender IDs registered on the connected Termii account, including their approval status.')]
+#[Description('List all Sender IDs registered on the connected Termii account, including their approval status. Results can optionally be filtered by name and/or status.')]
 #[IsReadOnly]
 class ListSenderIdsTool extends Tool
 {
@@ -21,11 +21,25 @@ class ListSenderIdsTool extends Tool
 
     public function handle(Request $request): Response
     {
-        return $this->run(fn (LaraTermii $termii) => $termii->allSenderId());
+        $request->validate([
+            'name' => ['nullable', 'string'],
+            'status' => ['nullable', 'string', 'in:active,pending,blocked'],
+        ]);
+
+        return $this->run(fn (LaraTermii $termii) => $termii->allSenderId(
+            name: $request->get('name'),
+            status: $request->get('status'),
+        ));
     }
 
     public function schema(JsonSchema $schema): array
     {
-        return [];
+        return [
+            'name' => $schema->string()
+                ->description('Filter results to Sender IDs matching this name.'),
+            'status' => $schema->string()
+                ->description('Filter results by approval status.')
+                ->enum(['active', 'pending', 'blocked']),
+        ];
     }
 }
