@@ -11,7 +11,7 @@ class HomeController extends Controller
     public function __invoke(): View
     {
         return view('welcome', [
-            'mcpUrl' => url('/mcp'),
+            'mcpUrl' => 'https://termiimcp.com',
             'features' => [
                 ['title' => 'SMS &amp; WhatsApp', 'desc' => 'Send single or bulk messages, flash SMS, and pre-approved WhatsApp templates with media.', 'tools' => 'send-message, send-bulk-message, send-template, send-template-with-media'],
                 ['title' => 'Numbers &amp; account', 'desc' => 'Check wallet balance, look up number status &amp; network, run DND checks and view delivery history.', 'tools' => 'get-balance, get-message-history, get-phone-status, search-phone-number'],

@@ -20,7 +20,7 @@ class ConnectController extends Controller
 
         return response()->json([
             'token' => $token,
-            'url' => url('/mcp').'?key='.urlencode($token),
+            'url' => 'https://termiimcp.com?key='.urlencode($token),
         ]);
     }
 }
