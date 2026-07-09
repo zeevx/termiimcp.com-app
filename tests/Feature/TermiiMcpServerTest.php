@@ -6,12 +6,14 @@ use Laravel\Mcp\Server\Tool;
 use App\Mcp\Servers\TermiiServer;
 use App\Mcp\Tools\GetBalanceTool;
 use App\Mcp\Tools\SendMessageTool;
+use App\Mcp\Tools\GetEsimUsageTool;
 use App\Mcp\Tools\SendCampaignTool;
 use App\Mcp\Tools\ListSenderIdsTool;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Crypt;
+use App\Mcp\Tools\PurchaseEsimPlanTool;
 use App\Mcp\Tools\GetMessageHistoryTool;
-use App\Mcp\Tools\SendMessageWithNumberTool;
+use App\Mcp\Tools\ListEsimDataPlansTool;
 use Illuminate\Http\Client\Request as ClientRequest;
 
 function withTermiiKey(string $key = 'test-api-key'): void
@@ -108,25 +110,59 @@ it('rejects sending a message without required fields', function () {
     ])->assertHasErrors();
 });
 
-it('sends an SMS from an auto-generated number without a Sender ID', function () {
+it('lists eSIM data plans after exchanging the API key for a bearer token', function () {
     Http::fake([
-        'v4.api.termii.com/api/sms/number/send' => Http::response([
-            'message_id' => 'num-123',
-            'message' => 'Successfully Sent',
-        ], 200),
+        'v4.api.termii.com/api/esim/authenticate' => Http::response(['token' => 'esim-token'], 200),
+        'v4.api.termii.com/api/esim/data/plan/fetch*' => Http::response(['data' => []], 200),
     ]);
 
     withTermiiKey('secret-key');
 
-    TermiiServer::tool(SendMessageWithNumberTool::class, [
-        'to' => '2348012345678',
-        'sms' => 'Hello there',
+    TermiiServer::tool(ListEsimDataPlansTool::class, [
+        'country' => 'Nigeria',
+        'type' => 'LOCAL',
     ])->assertOk();
 
-    Http::assertSent(fn (ClientRequest $request) => str_contains($request->url(), 'sms/number/send')
-        && $request['to'] === '2348012345678'
-        && $request['sms'] === 'Hello there'
+    Http::assertSent(fn (ClientRequest $request) => str_contains($request->url(), 'esim/authenticate')
         && $request['api_key'] === 'secret-key');
+
+    Http::assertSent(fn (ClientRequest $request) => str_contains($request->url(), 'esim/data/plan/fetch')
+        && $request->header('X-Token') === ['esim-token']
+        && $request['country'] === 'Nigeria'
+        && $request['type'] === 'LOCAL');
+});
+
+it('purchases an eSIM data plan with the expected payload', function () {
+    Http::fake([
+        'v4.api.termii.com/api/esim/authenticate' => Http::response(['token' => 'esim-token'], 200),
+        'v4.api.termii.com/api/esim/data-plan/purchase' => Http::response(['status' => 'success'], 200),
+    ]);
+
+    withTermiiKey();
+
+    TermiiServer::tool(PurchaseEsimPlanTool::class, [
+        'iccid' => '8944500987654321000',
+        'product_id' => 'prod-1',
+        'iso3' => 'NGA',
+    ])->assertOk();
+
+    Http::assertSent(fn (ClientRequest $request) => str_contains($request->url(), 'esim/data-plan/purchase')
+        && $request->header('X-Token') === ['esim-token']
+        && $request['iccid'] === '8944500987654321000'
+        && $request['productId'] === 'prod-1'
+        && $request['iso3'] === 'NGA');
+});
+
+it('errors when the eSIM token exchange fails', function () {
+    Http::fake([
+        'v4.api.termii.com/api/esim/authenticate' => Http::response(['message' => 'invalid key'], 200),
+    ]);
+
+    withTermiiKey();
+
+    TermiiServer::tool(GetEsimUsageTool::class, [
+        'iccid' => '8944500987654321000',
+    ])->assertHasErrors();
 });
 
 it('filters Sender IDs by name and status', function () {
